@@ -1,49 +1,110 @@
 #include "sort.h"
 
 /**
- * swap_ints - Swap two integers in an array.
- * @a: The first integer to swap.
- * @b: The second integer to swap.
+ * find_pow - find power of a number
+ * @x: the number
+ * @y: the value of power
+ *
+ * Return: the power of x
  */
-void swap_ints(int *a, int *b)
+int find_pow(int x, size_t y)
 {
-	int tmp;
+	if (y == 0)
+		return (1);
 
-	tmp = *a;
-	*a = *b;
-	*b = tmp;
+	return (x * find_pow(x, y - 1));
 }
 
 /**
- * shell_sort - Sort an array of integers in ascending
- *              order using the shell sort algorithm.
- * @array: An array of integers.
- * @size: The size of the array.
+ * seq_generator - generate sequence
+ * @size: size of sequence
  *
- * Description: Uses the Knuth interval sequence.
- * made by youssef and hassan.
+ * Return: pointer to the address of sequence
+ */
+int *seq_generator(size_t size)
+{
+	size_t n = 0;
+	int i = 0, nth_term, *sequence;
+
+	sequence = malloc(sizeof(int) * size);
+	if (sequence == NULL)
+		return (NULL);
+
+	nth_term = 0;
+	while (n < size)
+	{
+		nth_term = nth_term + find_pow(3, n);
+		sequence[i] = nth_term;
+		n++;
+		i++;
+	}
+	return (sequence);
+}
+
+/**
+ * reverse_seq - reverse sequence
+ * @sequence: pointer to the address of sequence
+ * @size: size of sequence
+ *
+ * Return: sequence in reverse
+ */
+int *reverse_seq(int *sequence, size_t size)
+{
+	int *rev_seq;
+	size_t i = 0, seq_index;
+
+	rev_seq = malloc(sizeof(int) * size);
+	if (rev_seq == NULL)
+		return (NULL);
+
+	seq_index = size - 1;
+	while (i < size)
+	{
+		rev_seq[i] = sequence[seq_index];
+		i++;
+		seq_index--;
+	}
+	return (rev_seq);
+}
+
+/**
+ * shell_sort - sorts using the Shell sort algorithm
+ * @array: array to be sorted
+ * @size: size of array
+ *
+ * Return: nothing
  */
 void shell_sort(int *array, size_t size)
 {
-	size_t gap, i, j;
+	int j, flag = 0;
+	int temp, *sequence, *rev_seq, hold;
+	size_t i, seq_index = 0;
 
-	if (array == NULL || size < 2)
+	sequence = seq_generator(size);
+	if (sequence == NULL)
 		return;
 
-	for (gap = 1; gap < (size / 3);)
-		gap = gap * 3 + 1;
+	rev_seq = reverse_seq(sequence, size);
+	if (rev_seq == NULL)
+		return;
 
-	for (; gap >= 1; gap /= 3)
+	while (seq_index < size)
 	{
-		for (i = gap; i < size; i++)
+		for (i = rev_seq[seq_index]; i < size; i++)
 		{
-			j = i;
-			while (j >= gap && array[j - gap] > array[j])
+			temp = array[i];
+			hold = rev_seq[seq_index];
+			for (j = i; j >= hold && array[j - hold] > temp; j -= hold)
 			{
-				swap_ints(array + j, array + (j - gap));
-				j -= gap;
+				array[j] = array[j - rev_seq[seq_index]];
 			}
+			array[j] = temp;
+			flag = 1;
 		}
-		print_array(array, size);
+		if (flag)
+			print_array(array, size);
+		seq_index++;
 	}
+	free(sequence);
+	free(rev_seq);
 }
