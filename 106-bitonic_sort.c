@@ -1,92 +1,107 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "sort.h"
 
-void swap_ints(int *a, int *b);
-void bitonic_merge(int *array, size_t size, size_t start, size_t seq,
-		char flow);
-void bitonic_seq(int *array, size_t size, size_t start, size_t seq, char flow);
-void bitonic_sort(int *array, size_t size);
-
 /**
- * swap_ints - Swap two integers in an array.
- * @a: The first integer to swap.
- * @b: The second integer to swap.
- * made by youssef and hassan.
+ * print_sequence - prints an array
+ * @array: given arrat
+ * @low: lower boundary
+ * @high: upper boundary
  */
-void swap_ints(int *a, int *b)
+void print_sequence(int *array, int low, int high)
 {
-	int tmp;
+	char *sep;
 
-	tmp = *a;
-	*a = *b;
-	*b = tmp;
+	for (sep = ""; low <= high; low++)
+	{
+		printf("%s%d", sep, array[low]);
+		sep = ", ";
+	}
+	printf("\n");
 }
 
 /**
- * bitonic_merge - Sort a bitonic sequence inside an array of integers.
- * @array: An array of integers.
- * @size: The size of the array.
- * @start: The starting index of the sequence in array to sort.
- * @seq: The size of the sequence to sort.
- * @flow: The direction to sort in.
+ * swap_dir - swaps tow elements if they are in the
+ * specified bitonic direction
+ * @array: given array
+ * @e1: first element
+ * @e2: second element
+ * @dir: direction 1 for UP and 0 for DOWN
  */
-void bitonic_merge(int *array, size_t size, size_t start, size_t seq,
-		char flow)
+void swap_dir(int *array, int e1, int e2, int dir)
 {
-	size_t i, jump = seq / 2;
+	int temp;
 
-	if (seq > 1)
+	if (dir == (array[e1] > array[e2]))
 	{
-		for (i = start; i < start + jump; i++)
-		{
-			if ((flow == UP && array[i] > array[i + jump]) ||
-			    (flow == DOWN && array[i] < array[i + jump]))
-				swap_ints(array + i, array + i + jump);
-		}
-		bitonic_merge(array, size, start, jump, flow);
-		bitonic_merge(array, size, start + jump, jump, flow);
+		temp = array[e1];
+		array[e1] = array[e2];
+		array[e2] = temp;
 	}
 }
 
 /**
- * bitonic_seq - Convert an array of integers into a bitonic sequence.
- * @array: An array of integers.
- * @size: The size of the array.
- * @start: The starting index of a block of the building bitonic sequence.
- * @seq: The size of a block of the building bitonic sequence.
- * @flow: The direction to sort the bitonic sequence block in.
+ * merge_sequence - merge sequence bitonically
+ * @array: given array
+ * @low: lower boundary
+ * @high: high boundary
+ * @dir: direction 1 for UP and 0 for DOWN
+ * @size: array size
  */
-void bitonic_seq(int *array, size_t size, size_t start, size_t seq, char flow)
+void merge_sequence(int *array, size_t low, size_t high, int dir, size_t size)
 {
-	size_t cut = seq / 2;
-	char *str = (flow == UP) ? "UP" : "DOWN";
+	size_t middle, i, j;
 
-	if (seq > 1)
-	{
-		printf("Merging [%lu/%lu] (%s):\n", seq, size, str);
-		print_array(array + start, seq);
+	if (high - low < 1)
+		return;
 
-		bitonic_seq(array, size, start, cut, UP);
-		bitonic_seq(array, size, start + cut, cut, DOWN);
-		bitonic_merge(array, size, start, seq, flow);
+	middle = (low + high) / 2;
+	for (i = low, j = middle + 1; i <= middle; i++, j++)
+		swap_dir(array, i, j, dir);
 
-		printf("Result [%lu/%lu] (%s):\n", seq, size, str);
-		print_array(array + start, seq);
-	}
+	merge_sequence(array, low, middle, dir, size);
+	merge_sequence(array, middle + 1, high, dir, size);
 }
 
 /**
- * bitonic_sort - Sort an array of integers in ascending
- *                order using the bitonic sort algorithm.
- * @array: An array of integers.
- * @size: The size of the array.
- *
- * Description: Prints the array after each swap. Only works for
- * size = 2^k where k >= 0 (ie. size equal to powers of 2).
+ * make_sequence - make bitonic sequence
+ * @array: given array
+ * @low: lower boundary
+ * @high: high boundary
+ * @dir: direction 1 for UP and 0 for DOWN
+ * @size: array size
+ */
+void make_sequence(int *array, size_t low, size_t high, int dir, size_t size)
+{
+	char *direction;
+	size_t middle;
+
+	if (high - low < 1)
+		return;
+
+	direction = dir ? "UP" : "DOWN";
+	printf("Merging [%ld/%ld] (%s):\n", high - low + 1, size, direction);
+	print_sequence(array, low, high);
+
+	middle = (low + high) / 2;
+	make_sequence(array, low, middle, 1, size);
+	make_sequence(array, middle + 1, high, 0, size);
+
+	merge_sequence(array, low, high, dir, size);
+	printf("Result [%ld/%ld] (%s):\n", high - low + 1, size, direction);
+	print_sequence(array, low, high);
+}
+
+/**
+ * bitonic_sort -  sorts an array of integers in
+ * ascending order using the Bitonic sort algorithm
+ * @array: given array
+ * @size: array size
  */
 void bitonic_sort(int *array, size_t size)
 {
-	if (array == NULL || size < 2)
+	if (!array || size < 2)
 		return;
 
-	bitonic_seq(array, size, 0, size, UP);
+	make_sequence(array, 0, size - 1, 1, size);
 }
